@@ -20,7 +20,16 @@
         android:layout_marginEnd="90dp"
         android:layout_marginBottom="45dp"
         android:layout_gravity="bottom|end"
-        android:text="Click the Button to Search ->"
+        android:text="@string/floating_button"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/try_again_button"
+        android:visibility="gone"
+        android:layout_gravity="center"
+        android:text="@string/try_again"
         />
 
     <android.support.design.widget.FloatingActionButton

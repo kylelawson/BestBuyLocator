@@ -2,10 +2,11 @@ package com.lawdogstudio.kyle.bestbuylocator;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +31,7 @@ import java.util.ArrayList;
  */
 public class JSONFragment extends Fragment {
 
-    final String bbyAPIKey = "8uhwa4p7xe34pqz6u3eqj3yq";
+    public static final String bbyAPIKey = "8uhwa4p7xe34pqz6u3eqj3yq";
 
     String jsonResponse = "";
     String zipCode = "";
@@ -46,36 +47,14 @@ public class JSONFragment extends Fragment {
 
     ArrayAdapter<String> arrayAdapter;
 
+    //Simple persistence with shared preference
+    SharedPreferences sharedPref;
+
     View view;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.main_screen_fragment, container, false);
-
-        //If arguments have been passed by the bottom view via the activity, use them
-        if(getArguments() != null) {
-            radius = getArguments().getString("radius");
-            zipCode = getArguments().getString("zip");
-
-            //Instantiate a network status manager
-            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-
-            //Instantiate a network info object and assign it the network info
-            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-
-            //If network status connection return true, call the Best Buy API
-            // If false, create a toast saying so
-            if(isConnected)
-            {
-
-                //Call the network method
-                JSONAction(zipCode, radius);
-
-            }else{
-                Toast.makeText(getActivity(), "No Data Connection", Toast.LENGTH_LONG).show();
-            }
-        }
 
         //Instantiate the listview
         bbyList = (ListView) view.findViewById(android.R.id.list);
@@ -85,6 +64,9 @@ public class JSONFragment extends Fragment {
 
         //Attach the adapter to the listview
         bbyList.setAdapter(arrayAdapter);
+
+        //Check for passed arguments from the bottom sheet
+        checkForBundle();
 
         return view;
     }
@@ -116,43 +98,13 @@ public class JSONFragment extends Fragment {
                     //within the array so we need to pull the array, pull the stores object from
                     //the array, and store the individual store data in strings for display
 
-                    //Variable setup
-                    String storeType = "";
-                    String storeName = "";
-                    String address = "";
-                    String city = "";
-                    String state = "";
-                    String zip = "";
-                    String distance = "";
-                    JSONObject storeObject;
-
                     //Calls the high level JSON Array that Best Buy sends
                     JSONArray stores = response.getJSONArray("stores");
 
-                    //Iterates through the array pulling each individual store's information,
-                    //which is put together as an object and assigns each key-value pair to a variable
-                    for (int i = 0; i < stores.length(); i++) {
-                        storeObject = stores.getJSONObject(i);
-                        storeType = storeObject.getString("storeType");
-                        storeName = storeObject.getString("name");
-                        address = storeObject.getString("address");
-                        city = storeObject.getString("city");
-                        state = storeObject.getString("region");
-                        zip = storeObject.getString("postalCode");
-                        distance = storeObject.getString("distance");
 
+                    //Use the parsing method with the array
+                    parseJson(stores);
 
-                        //Places the variables into a sentence variable, use \r\n to make space between
-                        //Listview items, better practice is to make a custom view adapter but this
-                        //will work for now
-                        jsonResponse = "\r\n" + storeName + " - " + storeType +
-                                "\r\nAddress: " + address + "\r\n" + city + ", " +state + ", "
-                                + zip + " - " + distance + " miles away" + "\r\n";
-
-                        //Adds the sentence to the store array
-                        bbyArray.add(jsonResponse);
-
-                    }
 
                     //After iteration is complete, the array adapter is notified that the store array
                     //data has been changed and updates the view accordingly
@@ -164,6 +116,7 @@ public class JSONFragment extends Fragment {
                 } catch (JSONException e) {
                     Toast.makeText(getActivity(), "There was an error with the Volley result retrieval",
                             Toast.LENGTH_SHORT).show();
+                    pd.dismiss();
                 }
             }
 
@@ -173,6 +126,7 @@ public class JSONFragment extends Fragment {
             public void onErrorResponse(VolleyError error) {
                 Toast.makeText(getActivity(), "There was an error with the Volley request",
                         Toast.LENGTH_SHORT).show();
+                pd.dismiss();
             }
 
         });
@@ -185,5 +139,124 @@ public class JSONFragment extends Fragment {
 
     }
 
+    private void checkForBundle(){
+        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+        //If arguments have been passed by the bottom view via the activity, use them
+        if(getArguments() != null) {
+            radius = getArguments().getString("radius");
+            zipCode = getArguments().getString("zip");
+
+            //Instantiate a network status manager
+            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            //Instantiate a network info object and assign it the network info
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
+            //If network status connection return true, call the Best Buy API
+            // If false, create a toast saying so
+            if(isConnected)
+            {
+
+                //Call the network method
+                JSONAction(zipCode, radius);
+
+            }else{
+                Toast.makeText(getActivity(), "No Data Connection", Toast.LENGTH_LONG).show();
+
+                //Set the retry button to visible
+                getActivity().findViewById(R.id.try_again_button).setVisibility(View.VISIBLE);
+            }
+        }else if(sharedPref.contains("SEARCH_LIST")){ //Makes sure the app has data stored before retrieving
+            retrieveArray();
+
+            //Hides the initial FAB instruction textiview since there already is data
+            getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
+            }
+        }
+
+    //Method that stores the array in shared preferences
+    private void storeArray(int i, String jsonResponse){
+
+        //Instantiate the shared preferences variable object
+        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+
+        //Apply an editor
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        //Assign the position number to a string as the key and put the value into shared preferences
+        String key = String.valueOf(i);
+        editor.putString("" + key, jsonResponse);
+        editor.commit();
+    }
+
+    //Retrieves the array from shared preferences
+    private void retrieveArray() {
+        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", 0);
+
+        //Get the size of the array
+        int length = Integer.valueOf(sharedPref.getString(("Size"), "0"));
+
+        //Use the size of the array to add each key-value pair to the array for listview update in order
+        //The key being the the position assigned from the storeArray method
+        for(int i = 0; i < length; i++){
+            bbyArray.add(sharedPref.getString(""+i, "None"));
+        }
+
+        arrayAdapter.notifyDataSetChanged();
+
+    }
+
+    private void parseJson(JSONArray stores) throws JSONException {
+
+        //Instantiate the shared preferences variable object
+        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+
+        //Add an editor
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        //Add the amount of stores returned into the shared preferences
+        editor.putString("Size", String.valueOf(stores.length()));
+        editor.commit();
+
+        //Variable setup
+        String storeType = "";
+        String storeName = "";
+        String address = "";
+        String city = "";
+        String state = "";
+        String zip = "";
+        String distance = "";
+        JSONObject storeObject;
+
+
+        //Iterates through the array pulling each individual store's information,
+        //which is put together as an object and assigns each key-value pair to a variable
+        for (int i = 0; i < stores.length(); i++) {
+            storeObject = stores.getJSONObject(i);
+            storeType = storeObject.getString("storeType");
+            storeName = storeObject.getString("name");
+            address = storeObject.getString("address");
+            city = storeObject.getString("city");
+            state = storeObject.getString("region");
+            zip = storeObject.getString("postalCode");
+            distance = storeObject.getString("distance");
+
+
+            //Places the variables into a sentence variable, use \r\n to make space between
+            //Listview items, better practice is to make a custom view adapter but this
+            //will work for now
+            jsonResponse = "\r\n" + storeName + " - " + storeType +
+                    "\r\nAddress: " + address + "\r\n" + city + ", " + state + ", "
+                    + zip + " - " + distance + " miles away" + "\r\n";
+
+            //Adds the sentence to the store array
+            bbyArray.add(jsonResponse);
+
+            //Add this sentence to the shared preferences, keeping it in order with this method
+            storeArray(i, jsonResponse);
+
+        }
+    }
 
 }
