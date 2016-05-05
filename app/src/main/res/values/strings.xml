@@ -3,8 +3,7 @@
     <string name="search_radius_title">Search Radius in Miles</string>
     <string name="zipcode_textbox">Zip Code</string>
     <string name="search_button">Find It</string>
-    <string name="default_string">Empty String</string>
     <string name="search_title">Search</string>
-    <string name="main_fragment_text">This is the main fragment</string>
-    <string name="variable_string">You want to find a store within %1$ miles of zip code %2$d</string>
+    <string name="floating_button">Click the Button to Search -></string>
+    <string name="try_again">Try the Search Again</string>
 </resources>
