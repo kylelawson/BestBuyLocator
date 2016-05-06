@@ -60,7 +60,7 @@ public class JSONFragment extends Fragment {
         bbyList = (ListView) view.findViewById(android.R.id.list);
 
         //Instantiate the adapter
-        arrayAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, bbyArray);
+        arrayAdapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, bbyArray);
 
         //Attach the adapter to the listview
         bbyList.setAdapter(arrayAdapter);
@@ -167,13 +167,14 @@ public class JSONFragment extends Fragment {
                 //Set the retry button to visible
                 getActivity().findViewById(R.id.try_again_button).setVisibility(View.VISIBLE);
             }
-        }else if(sharedPref.contains("SEARCH_LIST")){ //Makes sure the app has data stored before retrieving
-            retrieveArray();
+        }else if(sharedPref.contains("Size")){ //Makes sure the app has data stored before retrieving
 
-            //Hides the initial FAB instruction textiview since there already is data
-            getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
-            }
+                retrieveArray();
+
+                //Hides the initial FAB instruction textiview since there already is data
+                getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
         }
+    }
 
     //Method that stores the array in shared preferences
     private void storeArray(int i, String jsonResponse){
@@ -192,10 +193,10 @@ public class JSONFragment extends Fragment {
 
     //Retrieves the array from shared preferences
     private void retrieveArray() {
-        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", 0);
+        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
 
         //Get the size of the array
-        int length = Integer.valueOf(sharedPref.getString(("Size"), "0"));
+        int length = sharedPref.getInt("Size", 0);
 
         //Use the size of the array to add each key-value pair to the array for listview update in order
         //The key being the the position assigned from the storeArray method
@@ -210,13 +211,13 @@ public class JSONFragment extends Fragment {
     private void parseJson(JSONArray stores) throws JSONException {
 
         //Instantiate the shared preferences variable object
-        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+        sharedPref = getActivity() .getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
 
         //Add an editor
         SharedPreferences.Editor editor = sharedPref.edit();
 
         //Add the amount of stores returned into the shared preferences
-        editor.putString("Size", String.valueOf(stores.length()));
+        editor.putInt("Size", stores.length());
         editor.commit();
 
         //Variable setup
