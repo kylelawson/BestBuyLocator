@@ -29,6 +29,8 @@ public class BottomSheetFragment extends BottomSheetDialogFragment{
     Button searchButton;
     String radius = "", zipCode = "";
     View view;
+
+    //For the public interface listener declaration
     onSetListener onSetListener;
 
     //Boolean variables used in the button logic, used to show only the necessary toasts
@@ -161,7 +163,11 @@ public class BottomSheetFragment extends BottomSheetDialogFragment{
     //Custom interface used to pass data to the activity
     public interface onSetListener
     {
-        public void setSearchCriteria(String zipCodeIn, String radiusIn);
+        void setSearchCriteria(String zipCodeIn, String radiusIn);
+
+        void setMapLocation(String latIn, String lngIn);
+
+        void setMapLocation(float latIn, float lngIn);
     }
 
     //Makes sure the interface is implemented on this fragment's attachment to the activity

@@ -10,8 +10,16 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 //Implements the bottom sheet's interface so that something can be done with the data received
-public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener {
+public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener, OnMapReadyCallback, JSONFragment.onSelectionListener {
 
     //The floating action button, try again button and instruction text
     FloatingActionButton fab;
@@ -22,26 +30,26 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     private String zip;
     private String rad;
 
+    //Private variables for the latitude and longitude
+    private double latitude;
+    private double longitude;
+
     //Set a fragment manager for the main screen fragment
     FragmentManager fm = getSupportFragmentManager();
-    Fragment mainFragment;
+    Fragment listFragment;
+    SupportMapFragment mapFragment;
+
+    //Google Map
+    private GoogleMap gMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Shared preference file initiation for
-        //Initiate the fragment itself by attaching it to the fragment manager and assigning it the
+        //Initiate the fragments themselves by attaching them to the fragment manager and assigning it the
         //layout within the activity_main.xml
-        mainFragment = fm.findFragmentById(R.id.list_fragment_container);
-
-        //If the fragment is empty, attach a fragment activity class to it and begin a fragment transaction
-        //in order to show the fragment in the main view
-        if(mainFragment == null){
-            mainFragment = new JSONFragment();
-            fm.beginTransaction().add(R.id.list_fragment_container, mainFragment).commit();
-        }
+        initiateFragments();
 
         initialTv = (TextView) findViewById(R.id.initial_fb_text);
 
@@ -77,6 +85,22 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     }
 
+    private void initiateFragments(){
+        listFragment = fm.findFragmentById(R.id.list_fragment_container);
+        mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+
+        //If the fragment is empty, attach a fragment activity class to it and begin a fragment transaction
+        //in order to show the fragment in the main view
+        if(listFragment == null){
+            listFragment = new JSONFragment();
+            fm.beginTransaction().add(R.id.list_fragment_container, listFragment).commit();
+        }
+
+        if(mapFragment == null){
+            mapFragment.getMapAsync(this);
+        }
+    }
+
     //Override the implemented interface so that the data can be sent to the JSON fragment
     @Override
     public void setSearchCriteria(String zipCodeIn, String radiusIn) {
@@ -96,6 +120,40 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
         //Use the fragment manager to replace the current JSON Fragment with the new one that has arguments
         fm.beginTransaction().replace(R.id.list_fragment_container, replacement).commit();
+
+    }
+
+    //Interface that is used to move the map to the selected location in the listview
+    @Override
+    public void setMapLocation(String latIn, String lngIn) {
+
+        //Parse the strings received from the given listview location data
+        latitude = Double.parseDouble(latIn);
+        longitude = Double.parseDouble(lngIn);
+
+        //Connects the Google Map object to the supportMapFragment so the map can be manipulated
+        gMap = mapFragment.getMap();
+
+        //Clears any existing markers
+        gMap.clear();
+
+        //Create a marker on the location selected
+        MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude, longitude));
+        gMap.addMarker(marker);
+
+        //Move the map to the marker
+        CameraPosition cameraPosition = new CameraPosition.Builder().target(new LatLng(latitude, longitude)).zoom(15f).build();
+        gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+    @Override
+    public void setMapLocation(float latIn, float lngIn) {
+
+    }
+
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
 
     }
 
