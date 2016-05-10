@@ -1,5 +1,6 @@
 package com.lawdogstudio.kyle.bestbuylocator;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -10,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -38,17 +40,19 @@ public class JSONFragment extends Fragment {
     String radius = "";
     String url;
 
+    //Array list, listview for array, and adapter
     ArrayList<String> bbyArray = new ArrayList<>();
-
+    ArrayAdapter<String> arrayAdapter;
     ListView bbyList;
 
     //Progress dialog box
     ProgressDialog pd;
 
-    ArrayAdapter<String> arrayAdapter;
-
     //Simple persistence with shared preference
     SharedPreferences sharedPref;
+
+    //For the public interface declaration
+    onSelectionListener onSelectionListener;
 
     View view;
 
@@ -82,7 +86,7 @@ public class JSONFragment extends Fragment {
 
         //Set the url to be used given the zip code and radius
         url = "https://api.bestbuy.com/v1/stores(area(" + zipCodeIn + "," + radiusIn + "))" +
-                "?format=json&show=storeType,name,address,city,region,postalCode,distance" +
+                "?format=json&show=storeType,name,address,city,region,postalCode,distance,lat,lng" +
                 "&sort=distance.asc&apiKey=" + bbyAPIKey;
 
         //Create an object request object
@@ -161,6 +165,9 @@ public class JSONFragment extends Fragment {
                 //Call the network method
                 JSONAction(zipCode, radius);
 
+                //Ensures a listener is started for the listview if data is retrieved from the internet
+                listClickListener();
+
             }else{
                 Toast.makeText(getActivity(), "No Data Connection", Toast.LENGTH_LONG).show();
 
@@ -170,6 +177,9 @@ public class JSONFragment extends Fragment {
         }else if(sharedPref.contains("Size")){ //Makes sure the app has data stored before retrieving
 
                 retrieveArray();
+
+                //Ensures a listener is started for the listview if data is retrieved from internal storage
+                listClickListener();
 
                 //Hides the initial FAB instruction textiview since there already is data
                 getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
@@ -208,6 +218,24 @@ public class JSONFragment extends Fragment {
 
     }
 
+    //Stores the locations for the retrieved stores given in latitude and longitude
+    private void storeLocation(int i, String lat, String lng){
+        sharedPref = getActivity().getSharedPreferences("LOCATION_DATA", getActivity().MODE_PRIVATE);
+
+        //Apply an editor
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        //Assign the "Location" + position number as the key and put the values into it
+        String latitude = "Lat " + i;
+        editor.putString(latitude, lat);
+
+        String longitude = "Long " + i;
+        editor.putString(longitude, lng);
+
+        editor.commit();
+    }
+
+    //Parses the retrieved JSONArray for storage and use
     private void parseJson(JSONArray stores) throws JSONException {
 
         //Instantiate the shared preferences variable object
@@ -221,13 +249,15 @@ public class JSONFragment extends Fragment {
         editor.commit();
 
         //Variable setup
-        String storeType = "";
-        String storeName = "";
-        String address = "";
-        String city = "";
-        String state = "";
-        String zip = "";
-        String distance = "";
+        String storeType;
+        String storeName;
+        String address;
+        String city;
+        String state;
+        String zip;
+        String distance;
+        String lat;
+        String lng;
         JSONObject storeObject;
 
 
@@ -241,6 +271,8 @@ public class JSONFragment extends Fragment {
             city = storeObject.getString("city");
             state = storeObject.getString("region");
             zip = storeObject.getString("postalCode");
+            lat = storeObject.getString("lat");
+            lng = storeObject.getString("lng");
             distance = storeObject.getString("distance");
 
 
@@ -257,7 +289,43 @@ public class JSONFragment extends Fragment {
             //Add this sentence to the shared preferences, keeping it in order with this method
             storeArray(i, jsonResponse);
 
+            //Add latitude and longitude data to shared preferences, keeping it in order with this method
+            storeLocation(i, lat, lng);
+
         }
+    }
+
+    //Custom interface used to pass data to the activity in order to move the map
+    public interface onSelectionListener
+    {
+        void setMapLocation(String latIn, String lngIn);
+    }
+
+    //Makes sure the interface is implemented on this fragment's attachment to the activity
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        try {
+            onSelectionListener = (onSelectionListener) activity;
+        } catch (Exception e){
+
+        }
+    }
+
+    //Listview listener that passes the location of the selected store to the map via the interface
+    private void listClickListener(){
+        bbyList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                sharedPref = getActivity().getSharedPreferences("LOCATION_DATA", getActivity().MODE_PRIVATE);
+                String latitude = sharedPref.getString("Lat " + position, "0");
+                String longitude = sharedPref.getString("Long " + position, "0");
+
+                onSelectionListener.setMapLocation(latitude, longitude);
+            }
+        });
     }
 
 }
