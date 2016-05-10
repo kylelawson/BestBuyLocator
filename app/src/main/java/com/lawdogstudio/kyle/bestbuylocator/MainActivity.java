@@ -24,24 +24,17 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     //Set a fragment manager for the main screen fragment
     FragmentManager fm = getSupportFragmentManager();
-    Fragment mainFragment;
+    Fragment listFragment;
+    Fragment mapFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Shared preference file initiation for
-        //Initiate the fragment itself by attaching it to the fragment manager and assigning it the
+        //Initiate the fragments themselves by attaching them to the fragment manager and assigning it the
         //layout within the activity_main.xml
-        mainFragment = fm.findFragmentById(R.id.list_fragment_container);
-
-        //If the fragment is empty, attach a fragment activity class to it and begin a fragment transaction
-        //in order to show the fragment in the main view
-        if(mainFragment == null){
-            mainFragment = new JSONFragment();
-            fm.beginTransaction().add(R.id.list_fragment_container, mainFragment).commit();
-        }
+        initiateFragments();
 
         initialTv = (TextView) findViewById(R.id.initial_fb_text);
 
@@ -75,6 +68,23 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
             }
         });
 
+    }
+
+    private void initiateFragments(){
+        listFragment = fm.findFragmentById(R.id.list_fragment_container);
+        mapFragment = fm.findFragmentById(R.id.map_fragment_container);
+
+        //If the fragment is empty, attach a fragment activity class to it and begin a fragment transaction
+        //in order to show the fragment in the main view
+        if(listFragment == null){
+            listFragment = new JSONFragment();
+            fm.beginTransaction().add(R.id.list_fragment_container, listFragment).commit();
+        }
+
+        if(mapFragment == null){
+            mapFragment = new MapFragment();
+            fm.beginTransaction().add(R.id.map_fragment_container, mapFragment);
+        }
     }
 
     //Override the implemented interface so that the data can be sent to the JSON fragment
