@@ -21,6 +21,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.gitonway.lee.niftymodaldialogeffects.lib.Effectstype;
+import com.gitonway.lee.niftymodaldialogeffects.lib.NiftyDialogBuilder;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -53,6 +55,9 @@ public class JSONFragment extends Fragment {
 
     //For the public interface declaration
     onSelectionListener onSelectionListener;
+
+    //For the dialog effects
+    NiftyDialogBuilder noStoreDialog;
 
     View view;
 
@@ -176,6 +181,8 @@ public class JSONFragment extends Fragment {
             }
         }else if(sharedPref.contains("Size")){ //Makes sure the app has data stored before retrieving
 
+            //If the amount of stores in storage is greater than 0 then retrieve array
+            if(sharedPref.getInt("Size" , 0) != 0) {
                 retrieveArray();
 
                 //Ensures a listener is started for the listview if data is retrieved from internal storage
@@ -183,6 +190,7 @@ public class JSONFragment extends Fragment {
 
                 //Hides the initial FAB instruction textiview since there already is data
                 getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
+            }
         }
     }
 
@@ -199,6 +207,7 @@ public class JSONFragment extends Fragment {
         String key = String.valueOf(i);
         editor.putString("" + key, jsonResponse);
         editor.commit();
+
     }
 
     //Retrieves the array from shared preferences
@@ -248,50 +257,56 @@ public class JSONFragment extends Fragment {
         editor.putInt("Size", stores.length());
         editor.commit();
 
-        //Variable setup
-        String storeType;
-        String storeName;
-        String address;
-        String city;
-        String state;
-        String zip;
-        String distance;
-        String lat;
-        String lng;
-        JSONObject storeObject;
+        if(sharedPref.getInt("Size", 0) != 0) {
+
+            //Variable setup
+            String storeType;
+            String storeName;
+            String address;
+            String city;
+            String state;
+            String zip;
+            String distance;
+            String lat;
+            String lng;
+            JSONObject storeObject;
 
 
-        //Iterates through the array pulling each individual store's information,
-        //which is put together as an object and assigns each key-value pair to a variable
-        for (int i = 0; i < stores.length(); i++) {
-            storeObject = stores.getJSONObject(i);
-            storeType = storeObject.getString("storeType");
-            storeName = storeObject.getString("name");
-            address = storeObject.getString("address");
-            city = storeObject.getString("city");
-            state = storeObject.getString("region");
-            zip = storeObject.getString("postalCode");
-            lat = storeObject.getString("lat");
-            lng = storeObject.getString("lng");
-            distance = storeObject.getString("distance");
+            //Iterates through the array pulling each individual store's information,
+            //which is put together as an object and assigns each key-value pair to a variable
+            for (int i = 0; i < stores.length(); i++) {
+                storeObject = stores.getJSONObject(i);
+                storeType = storeObject.getString("storeType");
+                storeName = storeObject.getString("name");
+                address = storeObject.getString("address");
+                city = storeObject.getString("city");
+                state = storeObject.getString("region");
+                zip = storeObject.getString("postalCode");
+                lat = storeObject.getString("lat");
+                lng = storeObject.getString("lng");
+                distance = storeObject.getString("distance");
 
 
-            //Places the variables into a sentence variable, use \r\n to make space between
-            //Listview items, better practice is to make a custom view adapter but this
-            //will work for now
-            jsonResponse = "\r\n" + storeName + " - " + storeType +
-                    "\r\nAddress: " + address + "\r\n" + city + ", " + state + ", "
-                    + zip + " - " + distance + " miles away" + "\r\n";
+                //Places the variables into a sentence variable, use \r\n to make space between
+                //Listview items, better practice is to make a custom view adapter but this
+                //will work for now
+                jsonResponse = "\r\n" + storeName + " - " + storeType +
+                        "\r\nAddress: " + address + "\r\n" + city + ", " + state + ", "
+                        + zip + " - " + distance + " miles away" + "\r\n";
 
-            //Adds the sentence to the store array
-            bbyArray.add(jsonResponse);
+                //Adds the sentence to the store array
+                bbyArray.add(jsonResponse);
 
-            //Add this sentence to the shared preferences, keeping it in order with this method
-            storeArray(i, jsonResponse);
+                //Add this sentence to the shared preferences, keeping it in order with this method
+                storeArray(i, jsonResponse);
 
-            //Add latitude and longitude data to shared preferences, keeping it in order with this method
-            storeLocation(i, lat, lng);
+                //Add latitude and longitude data to shared preferences, keeping it in order with this method
+                storeLocation(i, lat, lng);
 
+            }
+        }else{
+            getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.VISIBLE);
+            setNoStoreDialog();
         }
     }
 
@@ -326,6 +341,21 @@ public class JSONFragment extends Fragment {
                 onSelectionListener.setMapLocation(latitude, longitude);
             }
         });
+    }
+
+    //Dialog with effects for no stores found result
+    public void setNoStoreDialog(){
+        //Instantiate the dialog effect
+        noStoreDialog = NiftyDialogBuilder.getInstance(getActivity());
+        noStoreDialog.withTitle("No Stores Found")
+                .withMessage("No Stores Found in the Search Area")
+                .withDialogColor(android.R.color.holo_blue_light)
+                .withButton1Text("OK").withEffect(Effectstype.Sidefill).setButton1Click(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                noStoreDialog.dismiss();
+            }
+        }).show();
     }
 
 }

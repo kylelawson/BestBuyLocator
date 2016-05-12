@@ -35,4 +35,8 @@ dependencies {
     //For Google Maps
     compile 'com.google.android.gms:play-services-maps:7.8.0'
     compile 'com.google.android.gms:play-services-location:7.8.0'
+
+    //For the dialog effects
+    compile 'com.nineoldandroids:library:2.4.0'
+    compile 'com.github.sd6352051.niftydialogeffects:niftydialogeffects:1.0.0@aar'
 }

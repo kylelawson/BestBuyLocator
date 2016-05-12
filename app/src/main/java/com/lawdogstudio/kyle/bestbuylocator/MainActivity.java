@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -98,6 +99,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
         if(mapFragment == null){
             mapFragment.getMapAsync(this);
+            gMap = mapFragment.getMap();
+
+            double lat = 39.5;
+            double lng = -98.35;
+
+            CameraPosition cameraPosition = new CameraPosition.Builder().target(new LatLng(lat,lng)).zoom(17).build();
+            GoogleMapOptions googleMapOptions = new GoogleMapOptions().camera(cameraPosition);
+            SupportMapFragment.newInstance(googleMapOptions);
+
         }
     }
 
