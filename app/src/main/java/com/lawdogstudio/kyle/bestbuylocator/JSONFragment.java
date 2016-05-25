@@ -313,7 +313,7 @@ public class JSONFragment extends Fragment {
     //Custom interface used to pass data to the activity in order to move the map
     public interface onSelectionListener
     {
-        void setMapLocation(String latIn, String lngIn);
+        void setMapLocation(String latIn, String lngIn, Boolean rotation);
     }
 
     //Makes sure the interface is implemented on this fragment's attachment to the activity
@@ -338,7 +338,7 @@ public class JSONFragment extends Fragment {
                 String latitude = sharedPref.getString("Lat " + position, "0");
                 String longitude = sharedPref.getString("Long " + position, "0");
 
-                onSelectionListener.setMapLocation(latitude, longitude);
+                onSelectionListener.setMapLocation(latitude, longitude, false);
             }
         });
     }

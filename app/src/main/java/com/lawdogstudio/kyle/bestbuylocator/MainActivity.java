@@ -1,5 +1,6 @@
 package com.lawdogstudio.kyle.bestbuylocator;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.BottomSheetDialogFragment;
 import android.support.design.widget.FloatingActionButton;
@@ -10,6 +11,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.batch.android.Batch;
+import com.batch.android.Config;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -48,6 +51,13 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //Setup Batch Push
+        Batch.Push.setGCMSenderId("804237166313");
+
+        // TODO : switch to live Batch Api Key before shipping
+        Batch.setConfig(new Config("DEV57451DBA54227C95AB023791434")); // devloppement
+        // Batch.setConfig(new Config("57451DBA50E6EFEBF616BCA5D4574E")); // live
+
         //Initiate the fragments themselves by attaching them to the fragment manager and assigning it the
         //layout within the activity_main.xml
         initiateFragments();
@@ -84,6 +94,12 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
             }
         });
 
+        //Restore Instance State if able
+        if(savedInstanceState != null){
+            String lat = String.valueOf(savedInstanceState.getDouble("lat"));
+            String lon = String.valueOf(savedInstanceState.getDouble("long"));
+            setMapLocation(lat,lon,true);
+        }
     }
 
     private void initiateFragments(){
@@ -133,9 +149,14 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     }
 
-    //Interface that is used to move the map to the selected location in the listview
     @Override
     public void setMapLocation(String latIn, String lngIn) {
+
+    }
+
+    //Interface that is used to move the map to the selected location in the listview
+    @Override
+    public void setMapLocation(String latIn, String lngIn, Boolean rotation) {
 
         //Parse the strings received from the given listview location data
         latitude = Double.parseDouble(latIn);
@@ -153,7 +174,11 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
         //Move the map to the marker
         CameraPosition cameraPosition = new CameraPosition.Builder().target(new LatLng(latitude, longitude)).zoom(15f).build();
-        gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        if(rotation == false) {
+            gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }else{
+            gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        }
     }
 
     @Override
@@ -167,4 +192,43 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     }
 
+    @Override
+    protected void onStart()
+    {
+        super.onStart();
+        Batch.onStart(this);
+
+    }
+
+    @Override
+    protected void onStop()
+    {
+        Batch.onStop(this);
+
+        super.onStop();
+
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        Batch.onDestroy(this);
+
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent)
+    {
+        Batch.onNewIntent(this, intent);
+
+        super.onNewIntent(intent);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState){
+
+        savedInstanceState.putDouble("lat", latitude);
+        savedInstanceState.putDouble("long", longitude);
+    }
 }
