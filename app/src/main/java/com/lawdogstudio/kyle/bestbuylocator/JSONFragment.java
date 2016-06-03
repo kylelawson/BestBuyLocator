@@ -161,17 +161,18 @@ public class JSONFragment extends Fragment {
 
     private void checkForBundle(){
         sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+
+        //Instantiate a network status manager
+        ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        //Instantiate a network info object and assign it the network info
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+
         //If arguments have been passed by the bottom view via the activity, use them
         if(getArguments() != null) {
             radius = getArguments().getString("radius");
             zipCode = getArguments().getString("zip");
-
-            //Instantiate a network status manager
-            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-
-            //Instantiate a network info object and assign it the network info
-            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
 
             //If network status connection return true, call the Best Buy API
             // If false, create a toast saying so
@@ -204,23 +205,39 @@ public class JSONFragment extends Fragment {
                 getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
             }
         }*/
+        //Check to see if the database is null, if not retrieve the previous search list and populate screen
         else if(dbRef != null){
-            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for(DataSnapshot dsp : dataSnapshot.getChildren()){
-                        bbyArray.add(String.valueOf(dsp.getValue()));
+            if(isConnected) {
+                dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        //Iterates through children and adds them to the ArrayList
+                        for (DataSnapshot dsp : dataSnapshot.getChildren()) {
+                            bbyArray.add(String.valueOf(dsp.getValue()));
+                        }
+
+                        arrayAdapter.notifyDataSetChanged();
                     }
 
-                    arrayAdapter.notifyDataSetChanged();
-                }
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        //Instantiate the dialog effect
+                        noStoreDialog = NiftyDialogBuilder.getInstance(getActivity());
+                        noStoreDialog.withTitle("Database Error")
+                                .withMessage("" + databaseError)
+                                .withDialogColor(android.R.color.holo_blue_light)
+                                .withButton1Text("OK").withEffect(Effectstype.Sidefill).setButton1Click(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                noStoreDialog.dismiss();
+                            }
+                        }).show();
+                    }
+                });
+            }else{
+                Toast.makeText(getActivity(), "No Data Connection", Toast.LENGTH_LONG).show();
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-
+            }
 
             listClickListener();
             getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
