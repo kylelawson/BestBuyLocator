@@ -23,12 +23,18 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.gitonway.lee.niftymodaldialogeffects.lib.Effectstype;
 import com.gitonway.lee.niftymodaldialogeffects.lib.NiftyDialogBuilder;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Kyle on 4/29/2016.
@@ -41,9 +47,10 @@ public class JSONFragment extends Fragment {
     String zipCode = "";
     String radius = "";
     String url;
+    long listSize = 0;
 
     //Array list, listview for array, and adapter
-    ArrayList<String> bbyArray = new ArrayList<>();
+    List<String> bbyArray = new ArrayList<>();
     ArrayAdapter<String> arrayAdapter;
     ListView bbyList;
 
@@ -58,6 +65,10 @@ public class JSONFragment extends Fragment {
 
     //For the dialog effects
     NiftyDialogBuilder noStoreDialog;
+
+    //Firebase Database
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference dbRef = database.getReference("list");
 
     View view;
 
@@ -179,7 +190,8 @@ public class JSONFragment extends Fragment {
                 //Set the retry button to visible
                 getActivity().findViewById(R.id.try_again_button).setVisibility(View.VISIBLE);
             }
-        }else if(sharedPref.contains("Size")){ //Makes sure the app has data stored before retrieving
+        }
+        /*else if(sharedPref.contains("Size")){ //Makes sure the app has data stored before retrieving
 
             //If the amount of stores in storage is greater than 0 then retrieve array
             if(sharedPref.getInt("Size" , 0) != 0) {
@@ -191,6 +203,27 @@ public class JSONFragment extends Fragment {
                 //Hides the initial FAB instruction textiview since there already is data
                 getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
             }
+        }*/
+        else if(dbRef != null){
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot dsp : dataSnapshot.getChildren()){
+                        bbyArray.add(String.valueOf(dsp.getValue()));
+                    }
+
+                    arrayAdapter.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+
+            listClickListener();
+            getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.GONE);
         }
     }
 
@@ -298,12 +331,16 @@ public class JSONFragment extends Fragment {
                 bbyArray.add(jsonResponse);
 
                 //Add this sentence to the shared preferences, keeping it in order with this method
-                storeArray(i, jsonResponse);
+                //storeArray(i, jsonResponse);
 
                 //Add latitude and longitude data to shared preferences, keeping it in order with this method
                 storeLocation(i, lat, lng);
 
             }
+
+            //Add array to cloud database
+            dbRef.setValue(bbyArray);
+
         }else{
             getActivity().findViewById(R.id.initial_fb_text).setVisibility(View.VISIBLE);
             setNoStoreDialog();
@@ -357,5 +394,6 @@ public class JSONFragment extends Fragment {
             }
         }).show();
     }
+
 
 }
