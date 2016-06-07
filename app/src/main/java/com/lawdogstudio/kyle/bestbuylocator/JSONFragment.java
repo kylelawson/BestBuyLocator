@@ -278,7 +278,7 @@ public class JSONFragment extends Fragment {
     }
 
     //Stores the locations for the retrieved stores given in latitude and longitude
-    private void storeLocation(int i, String lat, String lng){
+    private void storeLocation(int i, String lat, String lng, String add, String city, String state, String zip){
         sharedPref = getActivity().getSharedPreferences("LOCATION_DATA", getActivity().MODE_PRIVATE);
 
         //Apply an editor
@@ -290,6 +290,10 @@ public class JSONFragment extends Fragment {
 
         String longitude = "Long " + i;
         editor.putString(longitude, lng);
+
+        String address = "Add " + i;
+        String fullAddress = add + city + state + zip;
+        editor.putString(address, fullAddress);
 
         editor.commit();
     }
@@ -351,7 +355,7 @@ public class JSONFragment extends Fragment {
                 //storeArray(i, jsonResponse);
 
                 //Add latitude and longitude data to shared preferences, keeping it in order with this method
-                storeLocation(i, lat, lng);
+                storeLocation(i, lat, lng, address, city, state, zip);
 
             }
 
@@ -367,7 +371,7 @@ public class JSONFragment extends Fragment {
     //Custom interface used to pass data to the activity in order to move the map
     public interface onSelectionListener
     {
-        void setMapLocation(String latIn, String lngIn, Boolean rotation);
+        void setMapLocation(String latIn, String lngIn, Boolean rotation, String address);
     }
 
     //Makes sure the interface is implemented on this fragment's attachment to the activity
@@ -391,8 +395,9 @@ public class JSONFragment extends Fragment {
                 sharedPref = getActivity().getSharedPreferences("LOCATION_DATA", getActivity().MODE_PRIVATE);
                 String latitude = sharedPref.getString("Lat " + position, "0");
                 String longitude = sharedPref.getString("Long " + position, "0");
+                String address = sharedPref.getString("Add " + position, "0");
 
-                onSelectionListener.setMapLocation(latitude, longitude, false);
+                onSelectionListener.setMapLocation(latitude, longitude, false, address);
             }
         });
     }

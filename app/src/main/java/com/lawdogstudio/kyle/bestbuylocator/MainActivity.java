@@ -9,10 +9,18 @@ import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.batch.android.Batch;
 import com.batch.android.Config;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.share.Sharer;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -25,18 +33,24 @@ import com.google.android.gms.maps.model.MarkerOptions;
 //Implements the bottom sheet's interface so that something can be done with the data received
 public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener, OnMapReadyCallback, JSONFragment.onSelectionListener {
 
-    //The floating action button, try again button and instruction text
+    //The floating action button, try again button, and instruction text
     FloatingActionButton fab;
     TextView initialTv;
     Button tryAgain;
+
+    //Facebook stuff
+    ImageButton shareButton;
+    ShareDialog shareDialog;
+    CallbackManager callbackManager;
 
     //Private variables for try again button
     private String zip;
     private String rad;
 
-    //Private variables for the latitude and longitude
+    //Private variables for the address, latitude and longitude
     private double latitude;
     private double longitude;
+    private String add;
 
     //Set a fragment manager for the main screen fragment
     FragmentManager fm = getSupportFragmentManager();
@@ -94,11 +108,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
             }
         });
 
+        //Facebook button and wiring initialization
+        facebookShareButtonInitiate();
+
         //Restore Instance State if able
         if(savedInstanceState != null){
             String lat = String.valueOf(savedInstanceState.getDouble("lat"));
             String lon = String.valueOf(savedInstanceState.getDouble("long"));
-            setMapLocation(lat,lon,true);
+            String add = savedInstanceState.getString("add");
+            setMapLocation(lat,lon, true, add);
         }
     }
 
@@ -156,11 +174,12 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     //Interface that is used to move the map to the selected location in the listview
     @Override
-    public void setMapLocation(String latIn, String lngIn, Boolean rotation) {
+    public void setMapLocation(String latIn, String lngIn, Boolean rotation, final String address) {
 
         //Parse the strings received from the given listview location data
         latitude = Double.parseDouble(latIn);
         longitude = Double.parseDouble(lngIn);
+        add = address;
 
         //Connects the Google Map object to the supportMapFragment so the map can be manipulated
         gMap = mapFragment.getMap();
@@ -174,11 +193,29 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
         //Move the map to the marker
         CameraPosition cameraPosition = new CameraPosition.Builder().target(new LatLng(latitude, longitude)).zoom(15f).build();
-        if(rotation == false) {
+        if(!rotation) {
             gMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }else{
             gMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
         }
+
+        //Makes the Facebook button visible and onClickListener
+        shareButton.setVisibility(View.VISIBLE);
+        shareButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //Because it's against Facebook policy to prefill text in a post, a real website URL
+                //Could be placed here with the post
+
+                //Uses ShareLinkContent object to build the context for the share dialog
+                ShareLinkContent linkContent = new ShareLinkContent.Builder()
+                        .build();
+
+                //Shows dialog
+                shareDialog.show(linkContent);
+            }
+        });
     }
 
     @Override
@@ -225,10 +262,43 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         super.onNewIntent(intent);
     }
 
+    //Method that initiates the Facebook button and wiring
+    private void facebookShareButtonInitiate(){
+        shareButton = (ImageButton) findViewById(R.id.facebook_button);
+        shareButton.setVisibility(View.INVISIBLE);
+
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        callbackManager = CallbackManager.Factory.create();
+        shareDialog = new ShareDialog(this);
+        shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
+            @Override
+            public void onSuccess(Sharer.Result result) {
+
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+
+            }
+        });
+    }
+
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState){
 
         savedInstanceState.putDouble("lat", latitude);
         savedInstanceState.putDouble("long", longitude);
+        savedInstanceState.putString("add", add);
+    }
+
+    @Override
+    protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 }

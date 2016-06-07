@@ -26,7 +26,8 @@ repositories {
 
         //Batch push maven repository
         url 'http://maven.batch.com/release'
-    }
+        }
+
 }
 
 dependencies {
@@ -34,15 +35,15 @@ dependencies {
     testCompile 'junit:junit:4.12'
 
     //For bottom sheet
-    compile 'com.android.support:appcompat-v7:23.3.0'
-    compile 'com.android.support:design:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:design:23.4.0'
 
     //For networking and JSON
     compile 'com.android.volley:volley:1.0.0'
-    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:support-v4:23.4.0'
 
     //For Google Maps
-    compile 'com.google.android.gms:play-services-maps:9.0.0'
+    compile 'com.google.android.gms:play-services-maps:9.0.2'
 
     //For the dialog effects
     compile 'com.nineoldandroids:library:2.4.0'
@@ -50,15 +51,20 @@ dependencies {
 
     //For the Batch push
     compile 'com.batch.android:batch-sdk:1.5.+'
-    compile 'com.google.android.gms:play-services-location:9.0.0'
-    compile 'com.google.android.gms:play-services-gcm:9.0.0'
+    compile 'com.google.android.gms:play-services-location:9.0.2'
+    compile 'com.google.android.gms:play-services-gcm:9.0.2'
 
     //For Firebase Cloud
-    compile 'com.google.firebase:firebase-core:9.0.0'
-    compile 'com.google.firebase:firebase-database:9.0.0'
+    compile 'com.google.firebase:firebase-core:9.0.2'
+    compile 'com.google.firebase:firebase-database:9.0.2'
 
     //For Firebase Authentication
-    compile 'com.firebaseui:firebase-ui-auth:0.4.0'
+    //compile 'com.firebaseui:firebase-ui-auth:0.4.0'
+    compile 'com.google.firebase:firebase-auth:9.0.2'
+
+    //Facebook integration
+    compile 'com.facebook.android:facebook-android-sdk:[4,5)'
+
 }
 
 apply plugin: 'com.google.gms.google-services'
