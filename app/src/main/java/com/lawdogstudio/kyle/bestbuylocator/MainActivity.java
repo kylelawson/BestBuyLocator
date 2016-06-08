@@ -29,6 +29,11 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+import com.twitter.sdk.android.tweetcomposer.TweetComposer;
+
+import io.fabric.sdk.android.Fabric;
 
 //Implements the bottom sheet's interface so that something can be done with the data received
 public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener, OnMapReadyCallback, JSONFragment.onSelectionListener {
@@ -42,6 +47,11 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     ImageButton shareButton;
     ShareDialog shareDialog;
     CallbackManager callbackManager;
+
+    //Twitter stuff
+    ImageButton twitterButton;
+    public static final String TWITTER_KEY = "AxmudfMeKMhIx2IzrxP6052Ku";
+    public static final String TWITTER_SECRET = "bXWpfIaD5oAvuL7lWGIMUlkJ37yLF8Ku4vlnhLEO2GMv6OwlRN" ;
 
     //Private variables for try again button
     private String zip;
@@ -111,6 +121,9 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         //Facebook button and wiring initialization
         facebookShareButtonInitiate();
 
+        //Twitter button and wiring initialization
+        twitterShareButtonInitiate();
+
         //Restore Instance State if able
         if(savedInstanceState != null){
             String lat = String.valueOf(savedInstanceState.getDouble("lat"));
@@ -167,14 +180,10 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     }
 
-    @Override
-    public void setMapLocation(String latIn, String lngIn) {
-
-    }
 
     //Interface that is used to move the map to the selected location in the listview
     @Override
-    public void setMapLocation(String latIn, String lngIn, Boolean rotation, final String address) {
+    public void setMapLocation(String latIn, String lngIn, Boolean rotation, String address) {
 
         //Parse the strings received from the given listview location data
         latitude = Double.parseDouble(latIn);
@@ -209,24 +218,23 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
                 //Could be placed here with the post
 
                 //Uses ShareLinkContent object to build the context for the share dialog
-                ShareLinkContent linkContent = new ShareLinkContent.Builder()
-                        .build();
+                ShareLinkContent linkContent = new ShareLinkContent.Builder().build();
 
                 //Shows dialog
                 shareDialog.show(linkContent);
             }
         });
-    }
 
-    @Override
-    public void setMapLocation(float latIn, float lngIn) {
-
-    }
-
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-
+        //Makes the Twitter button visible and onClickListener
+        twitterButton.setVisibility(View.VISIBLE);
+        twitterButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TweetComposer.Builder builder = new TweetComposer.Builder(MainActivity.this)
+                        .text("I got my Smart Homes Thermostat at Best Buy Located at " + add);
+                builder.show();
+            }
+        });
     }
 
     @Override
@@ -288,6 +296,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         });
     }
 
+
+    private void twitterShareButtonInitiate() {
+        twitterButton = (ImageButton) findViewById(R.id.twitter_button);
+        twitterButton.setVisibility(View.INVISIBLE);
+        TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
+        Fabric.with(this, new Twitter(authConfig));
+
+    }
+
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState){
 
@@ -300,5 +317,10 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         callbackManager.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
     }
 }

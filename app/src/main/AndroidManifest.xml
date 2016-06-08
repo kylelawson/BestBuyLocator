@@ -83,6 +83,11 @@
                   android:name="com.facebook.FacebookContentProvider"
                   android:exported="true"/>
 
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="5fa55a22649be4933651e0fda97ed34531eea995"
+            />
+
     </application>
 
 </manifest>

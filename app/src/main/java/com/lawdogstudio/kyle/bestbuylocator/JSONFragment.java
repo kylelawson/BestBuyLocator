@@ -292,10 +292,11 @@ public class JSONFragment extends Fragment {
         editor.putString(longitude, lng);
 
         String address = "Add " + i;
-        String fullAddress = add + city + state + zip;
+        String fullAddress = "" + add + ", " + city + ", " + state + " " + zip;
         editor.putString(address, fullAddress);
 
         editor.commit();
+
     }
 
     //Parses the retrieved JSONArray for storage and use
@@ -396,6 +397,8 @@ public class JSONFragment extends Fragment {
                 String latitude = sharedPref.getString("Lat " + position, "0");
                 String longitude = sharedPref.getString("Long " + position, "0");
                 String address = sharedPref.getString("Add " + position, "0");
+
+                Toast.makeText(getActivity(), "" + address, Toast.LENGTH_SHORT).show();
 
                 onSelectionListener.setMapLocation(latitude, longitude, false, address);
             }

@@ -165,9 +165,6 @@ public class BottomSheetFragment extends BottomSheetDialogFragment{
     {
         void setSearchCriteria(String zipCodeIn, String radiusIn);
 
-        void setMapLocation(String latIn, String lngIn);
-
-        void setMapLocation(float latIn, float lngIn);
     }
 
     //Makes sure the interface is implemented on this fragment's attachment to the activity
