@@ -1,6 +1,7 @@
 package com.lawdogstudio.kyle.bestbuylocator;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.BottomSheetDialogFragment;
 import android.support.design.widget.FloatingActionButton;
@@ -21,6 +22,8 @@ import com.facebook.FacebookSdk;
 import com.facebook.share.Sharer;
 import com.facebook.share.model.ShareLinkContent;
 import com.facebook.share.widget.ShareDialog;
+import com.gitonway.lee.niftymodaldialogeffects.lib.Effectstype;
+import com.gitonway.lee.niftymodaldialogeffects.lib.NiftyDialogBuilder;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMapOptions;
@@ -29,6 +32,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.twitter.sdk.android.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.tweetcomposer.TweetComposer;
@@ -38,6 +43,7 @@ import io.fabric.sdk.android.Fabric;
 //Implements the bottom sheet's interface so that something can be done with the data received
 public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener, OnMapReadyCallback, JSONFragment.onSelectionListener {
 
+    private static final int TWEET_COMPOSER_REQUEST_CODE = 0;
     //The floating action button, try again button, and instruction text
     FloatingActionButton fab;
     TextView initialTv;
@@ -47,11 +53,15 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     ImageButton shareButton;
     ShareDialog shareDialog;
     CallbackManager callbackManager;
+    Boolean fbClicked = false;
+    Boolean shared = false;
+    String location;
 
     //Twitter stuff
     ImageButton twitterButton;
     public static final String TWITTER_KEY = "AxmudfMeKMhIx2IzrxP6052Ku";
-    public static final String TWITTER_SECRET = "bXWpfIaD5oAvuL7lWGIMUlkJ37yLF8Ku4vlnhLEO2GMv6OwlRN" ;
+    public static final String TWITTER_SECRET = "bXWpfIaD5oAvuL7lWGIMUlkJ37yLF8Ku4vlnhLEO2GMv6OwlRN";
+    Boolean twitterClicked = false;
 
     //Private variables for try again button
     private String zip;
@@ -69,6 +79,14 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
     //Google Map
     private GoogleMap gMap;
+
+    //Firebase Database
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference facebookDBRef = database.getReference("facebookposts");
+    DatabaseReference twitterDBRef = database.getReference("twitterposts");
+
+    //For the dialog effects
+    NiftyDialogBuilder alreadyPostedDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -189,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         latitude = Double.parseDouble(latIn);
         longitude = Double.parseDouble(lngIn);
         add = address;
+        location = "" + latitude + longitude;
 
         //Connects the Google Map object to the supportMapFragment so the map can be manipulated
         gMap = mapFragment.getMap();
@@ -214,15 +233,86 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
             @Override
             public void onClick(View v) {
 
+                SharedPreferences pref = getSharedPreferences("POSTED_STORES", MODE_PRIVATE);
+                int count = pref.getInt("COUNT", 0);
+
+                if(count != 0){
+                    for(int i = 0; i < count; i++){
+                        if(pref.getString("store" + i, "0").equals(location)){
+                            alreadyPostedSocialMedia("posted");
+                            shared = true;
+
+                        }
+                    }
+
+                    if(shared == false){
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("store" + (count + 1), location);
+                        editor.putInt("COUNT", count + 1);
+
+                        editor.commit();
+                        //Uses ShareLinkContent object to build the context for the share dialog
+                        ShareLinkContent linkContent = new ShareLinkContent.Builder().build();
+
+                        //Show Facebook share dialog
+                        shareDialog.show(linkContent);
+                    }
+
+                }else{
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString("store" + (count + 1), location);
+                    editor.putInt("COUNT", count + 1);
+
+                    editor.commit();
+                    //Uses ShareLinkContent object to build the context for the share dialog
+                    ShareLinkContent linkContent = new ShareLinkContent.Builder().build();
+
+                    //Show Facebook share dialog
+                    shareDialog.show(linkContent);
+                }
+
+                /*
+                facebookDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        for (DataSnapshot dsp : dataSnapshot.getChildren()) {
+                            if(String.valueOf(dsp.getValue()).equals(location)){
+                                shared = true;
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+
+                });
+
                 //Because it's against Facebook policy to prefill text in a post, a real website URL
                 //Could be placed here with the post
+                if (shared) {
 
-                //Uses ShareLinkContent object to build the context for the share dialog
-                ShareLinkContent linkContent = new ShareLinkContent.Builder().build();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Already Posted")
+                            .setMessage("You've already posted that you've purchased a new Smart Homes Inc." +
+                                    "thermostat")
+                            .show();
 
-                //Shows dialog
-                shareDialog.show(linkContent);
+                } else {
+                    fbClicked = true;
+                    shared = false;
+
+                    //Uses ShareLinkContent object to build the context for the share dialog
+                    ShareLinkContent linkContent = new ShareLinkContent.Builder().build();
+
+                    //Show Facebook share dialog
+                    shareDialog.show(linkContent);
+                }*/
+                shared = false;
             }
+
         });
 
         //Makes the Twitter button visible and onClickListener
@@ -230,9 +320,99 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         twitterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                TweetComposer.Builder builder = new TweetComposer.Builder(MainActivity.this)
-                        .text("I got my Smart Homes Thermostat at Best Buy Located at " + add);
-                builder.show();
+                SharedPreferences pref = getSharedPreferences("TWEETED_STORES", MODE_PRIVATE);
+                int count = pref.getInt("COUNT", 0);
+
+                if(count != 0){
+                    for(int i = 0; i < count; i++){
+                        if(pref.getString("store" + i, "0").equals(location)){
+                            alreadyPostedSocialMedia("tweeted");
+                            shared = true;
+
+                        }
+                    }
+
+                    if(shared == false){
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("store" + (count + 1), location);
+                        editor.putInt("COUNT", count + 1);
+
+                        editor.commit();
+
+                        //TweetComposer.Builder builder = new TweetComposer.Builder(MainActivity.this)
+                        //        .text("I got my Smart Homes Thermostat at Best Buy Located at " + add);
+                        //builder.show();
+                        Intent intent = new TweetComposer.Builder(MainActivity.this)
+                                .text("I got my Smart Homes Thermostat at Best Buy Located at " + add)
+                                .createIntent();
+
+                        twitterClicked = true;
+
+                        startActivityForResult(intent, TWEET_COMPOSER_REQUEST_CODE);
+
+                        shared = false;
+                    }
+
+                }else{
+
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString("store" + (count + 1), location);
+                    editor.putInt("COUNT", count + 1);
+
+                    editor.commit();
+
+                    //TweetComposer.Builder builder = new TweetComposer.Builder(MainActivity.this)
+                    //        .text("I got my Smart Homes Thermostat at Best Buy Located at " + add);
+                    //builder.show();
+                    Intent intent = new TweetComposer.Builder(MainActivity.this)
+                            .text("I got my Smart Homes Thermostat at Best Buy Located at " + add)
+                            .createIntent();
+
+                    twitterClicked = true;
+
+                    startActivityForResult(intent, TWEET_COMPOSER_REQUEST_CODE);
+
+                    shared = false;
+                }
+
+                /*twitterDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {;
+
+                        for (DataSnapshot dsp : dataSnapshot.getChildren()) {
+                            if(dsp.getChildren().toString() == location){
+                                shared = true;
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+                //Because it's against Facebook policy to prefill text in a post, a real website URL
+                //Could be placed here with the post
+                if(shared) {
+                    //TweetComposer.Builder builder = new TweetComposer.Builder(MainActivity.this)
+                    //        .text("I got my Smart Homes Thermostat at Best Buy Located at " + add);
+                    //builder.show();
+                    Intent intent = new TweetComposer.Builder(MainActivity.this)
+                            .text("I got my Smart Homes Thermostat at Best Buy Located at " + add)
+                            .createIntent();
+
+                    twitterClicked = true;
+
+                    startActivityForResult(intent, TWEET_COMPOSER_REQUEST_CODE);
+
+                    shared = false;
+                }else{
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+                    builder.setTitle("Already Posted")
+                            .setMessage("You've already posted for this store")
+                            .create().show();
+                }*/
+
             }
         });
     }
@@ -276,22 +456,25 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         shareButton.setVisibility(View.INVISIBLE);
 
         FacebookSdk.sdkInitialize(getApplicationContext());
+
         callbackManager = CallbackManager.Factory.create();
         shareDialog = new ShareDialog(this);
         shareDialog.registerCallback(callbackManager, new FacebookCallback<Sharer.Result>() {
             @Override
             public void onSuccess(Sharer.Result result) {
-
+                facebookDBRef.push().setValue(location);
+                fbClicked = false;
+                shared = false;
             }
 
             @Override
             public void onCancel() {
-
+                fbClicked = false;
             }
 
             @Override
             public void onError(FacebookException error) {
-
+                fbClicked = false;
             }
         });
     }
@@ -302,6 +485,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         twitterButton.setVisibility(View.INVISIBLE);
         TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
         Fabric.with(this, new Twitter(authConfig));
+
 
     }
 
@@ -316,11 +500,43 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     @Override
     protected void onActivityResult(final int requestCode, final int resultCode, final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        callbackManager.onActivityResult(requestCode, resultCode, data);
+        if(fbClicked)
+            callbackManager.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == TWEET_COMPOSER_REQUEST_CODE) {
+
+            if(resultCode == RESULT_OK) {
+
+                String location = "" + latitude + longitude;
+                twitterDBRef.push().setValue(location);
+
+            } else if(resultCode == RESULT_CANCELED) {
+
+
+            }
+        }
+
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
     }
+
+    //Dialog with effects for no stores found result
+    public void alreadyPostedSocialMedia(String socialMediaType){
+        //Instantiate the dialog effect
+        alreadyPostedDialog = NiftyDialogBuilder.getInstance(this);
+        alreadyPostedDialog.withTitle("Already Posted")
+                .withMessage("You've already "+ socialMediaType +" that you've purchased a new Smart Homes Inc. " +
+                        "thermostat at this location")
+                .withDialogColor(android.R.color.holo_blue_light)
+                .withButton1Text("OK").withEffect(Effectstype.Sidefill).setButton1Click(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                alreadyPostedDialog.dismiss();
+            }
+        }).show();
+    }
+
 }

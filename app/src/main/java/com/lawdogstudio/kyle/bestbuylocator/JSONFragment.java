@@ -47,7 +47,6 @@ public class JSONFragment extends Fragment {
     String zipCode = "";
     String radius = "";
     String url;
-    long listSize = 0;
 
     //Array list, listview for array, and adapter
     List<String> bbyArray = new ArrayList<>();
@@ -160,7 +159,7 @@ public class JSONFragment extends Fragment {
     }
 
     private void checkForBundle(){
-        sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
+        //sharedPref = getActivity().getSharedPreferences("SEARCH_LIST", getActivity().MODE_PRIVATE);
 
         //Instantiate a network status manager
         ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -397,8 +396,6 @@ public class JSONFragment extends Fragment {
                 String latitude = sharedPref.getString("Lat " + position, "0");
                 String longitude = sharedPref.getString("Long " + position, "0");
                 String address = sharedPref.getString("Add " + position, "0");
-
-                Toast.makeText(getActivity(), "" + address, Toast.LENGTH_SHORT).show();
 
                 onSelectionListener.setMapLocation(latitude, longitude, false, address);
             }
