@@ -2,6 +2,7 @@ package com.lawdogstudio.kyle.bestbuylocator;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.BottomSheetDialogFragment;
 import android.support.design.widget.FloatingActionButton;
@@ -44,6 +45,8 @@ import io.fabric.sdk.android.Fabric;
 public class MainActivity extends AppCompatActivity implements BottomSheetFragment.onSetListener, OnMapReadyCallback, JSONFragment.onSelectionListener {
 
     private static final int TWEET_COMPOSER_REQUEST_CODE = 0;
+    private static final String GITHUB_URL = "https://github.com/kylelawson/BestBuyLocator";
+
     //The floating action button, try again button, and instruction text
     FloatingActionButton fab;
     TextView initialTv;
@@ -88,6 +91,8 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
     //For the dialog effects
     NiftyDialogBuilder alreadyPostedDialog;
 
+    ImageButton github;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
         Batch.Push.setGCMSenderId("804237166313");
 
         // TODO : switch to live Batch Api Key before shipping
-        Batch.setConfig(new Config("DEV57451DBA54227C95AB023791434")); // devloppement
+        Batch.setConfig(new Config("DEV57451DBA54227C95AB023791434")); // development
         // Batch.setConfig(new Config("57451DBA50E6EFEBF616BCA5D4574E")); // live
 
         //Initiate the fragments themselves by attaching them to the fragment manager and assigning it the
@@ -141,6 +146,17 @@ public class MainActivity extends AppCompatActivity implements BottomSheetFragme
 
         //Twitter button and wiring initialization
         twitterShareButtonInitiate();
+
+        //Setup Github Button
+        github = (ImageButton) findViewById(R.id.github_button);
+        github.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(GITHUB_URL));
+                startActivity(i);
+            }
+        });
 
         //Restore Instance State if able
         if(savedInstanceState != null){
